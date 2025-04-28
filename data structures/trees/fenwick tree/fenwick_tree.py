@@ -6,7 +6,7 @@ def add(index: int, diff: int, fenwick_list: list):
 def set_value(index: int, new_value: int, original_list: list, fenwick_list: list):
     diff = new_value - original_list[index]
     original_list[index] = new_value
-    add(index, diff, original_list, fenwick_list)
+    add(index, diff, fenwick_list)
 
 def build(original_list: list, fenwick_list: list):
     for index in range(len(original_list)):

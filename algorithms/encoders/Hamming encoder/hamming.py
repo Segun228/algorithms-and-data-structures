@@ -1,71 +1,61 @@
-from math import log2
+from math import log2, ceil
+def check_pow_2(n):
+    if(n > 0 and (n & (n - 1))==0):
+        return True
+    return False
 
-def hemming_encode (s : str) -> str:
-    help_bits_quantity = 0
-    i = 0
-    counter = 0
-    code_list = [None]
-    for le in s:
-        code_list.append(int(le))
-
-    while(i + help_bits_quantity <= len(s) + 2**(int(log2(len(s))))):
-        if (i == 2**help_bits_quantity):
-            code_list.insert(i, 0)
-            help_bits_quantity+=1
-        i+=1
-
-    total_length = help_bits_quantity + len(s)
-    print(help_bits_quantity)
-    for j in range(0, help_bits_quantity):
-        counter = 0
-        for k in range(2**j, total_length, 2**j):
-            if(k>total_length):
-                break
-            for r in range(0, 2**j):
-                if k+r>total_length:
-                    break
-                if(code_list[k+r]==1 and not((i & (i - 1)) == 0)):
-                    counter+=1
-        if(counter%2):
-            code_list[2**j] = 1
+def hemming_encode(s: str) -> str:
+    data_bits = [int(bit) for bit in s]
+    n = len(data_bits)
+    check_bits_quantity = 0
+    while(2**check_bits_quantity < n + check_bits_quantity + 1):
+        check_bits_quantity += 1
+    encoded = []
+    data_index = 0
+    for i in range(1, n + check_bits_quantity + 1):
+        if check_pow_2(i):
+            encoded.append(0)
         else:
-            code_list[2**j] = 0
-    code_list.pop(0)
-    for i in range(0, len(code_list)):
-        code_list[i] = str(code_list[i])
-    return "".join(code_list)
+            encoded.append(data_bits[data_index])
+            data_index += 1
+    for i in range(check_bits_quantity):
+        current = 2**i
+        if(current > len(encoded)):
+            continue
+        buf = 0
+        for j in range(current-1, len(encoded), 2*current):
+            for k in range(j, min(j+current, len(encoded))):
+                buf ^= encoded[k]
+        encoded[current - 1] = buf
+    return ''.join(map(str, encoded))
 
+def hemming_decode(s: str) -> str:
+    encoded = [int(bit) for bit in s]
+    n = len(encoded)
+    check_bits_quantity = 0
+    while(2**check_bits_quantity <= n):
+        check_bits_quantity += 1
+    
+    error_pos = 0
+    for i in range(check_bits_quantity):
+        current = 2**i
+        if(current > n):
+            continue
+        buf = 0
+        for j in range(current - 1, n, 2 * current):
+            for k in range(j, min(j + current, n)):
+                buf ^= encoded[k]
+        if(buf != 0):
+            error_pos += current
+    if(0 < error_pos and error_pos <= n):
+        encoded[error_pos - 1] ^= 1
+    decoded = []
+    for i in range(1, n + 1):
+        if(not check_pow_2(i)):
+            decoded.append(str(encoded[i - 1]))
+    return ''.join(decoded)
 
-def hemming_decode (s : str) -> str:
-    code_list = []
-    answer = ""
-    for le in s:
-        code_list.append(le)
-    mistakes = []
-    i = 0
-    counter = 0
-    control_bits = 0
-    while(i < len(s)):
-        if((i & (i - 1)) == 0):
-            control_bits+=1
-    for i in range(control_bits):
-        counter = 0
-        control_bit_position = 2**i 
-        value = 0
-        for j in range(1, len(s)+control_bits+1):
-            if (j & control_bit_position) != 0:
-                if code_list[j - 1] == '1':
-                    counter+=1
-        if(counter%2 != code_list[control_bit_position]):
-            mistakes.append(control_bit_position)
-    code_list[sum(mistakes)] ^= 1
-    for j in range(1, len(s)+control_bits+1):
-        if not((j & (j - 1)) == 0):
-            answer+=code_list[j]
-    print(answer)
-    return answer
-
-
-s = input()
-print(hemming_encode(s))
-print(hemming_decode(input()))
+z = "0101010"
+buf = hemming_encode(z)
+print(buf)
+print(hemming_decode(buf))
