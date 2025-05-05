@@ -11,7 +11,6 @@ class BTree{
             Node* parent = nullptr;
         };
         Node* root = nullptr;
-
         int dumb_push_to_node(int val, Node* exact){
             if(exact==nullptr){
                 return -1;
@@ -179,18 +178,18 @@ class BTree{
             if(!parent){
                 return;
             } 
-            int idx = -1;
+            int val_index = -1;
             for (int i = 0; i<parent->children.size(); i++) {
                 if(parent->children[i] == target) {
-                    idx = i;
+                    val_index = i;
                     break;
                 }
             }
-            Node* left_sibling = (idx > 0) ? parent->children[idx - 1] : nullptr;
-            Node* right_sibling = (idx < parent->children.size() - 1) ? parent->children[idx + 1] : nullptr;
+            Node* left_sibling = (val_index > 0) ? parent->children[val_index - 1] : nullptr;
+            Node* right_sibling = (val_index < parent->children.size() - 1) ? parent->children[val_index + 1] : nullptr;
             if (left_sibling && left_sibling->values.size() > min_keys) {
-                target->values.insert(target->values.begin(), parent->values[idx - 1]);
-                parent->values[idx - 1] = left_sibling->values.back();
+                target->values.insert(target->values.begin(), parent->values[val_index - 1]);
+                parent->values[val_index - 1] = left_sibling->values.back();
                 left_sibling->values.pop_back();
                 if (!left_sibling->children.empty()) {
                     target->children.insert(target->children.begin(), left_sibling->children.back());
@@ -200,8 +199,8 @@ class BTree{
                 return;
             }
             if (right_sibling && right_sibling->values.size() > min_keys) {
-                target->values.push_back(parent->values[idx]);
-                parent->values[idx] = right_sibling->values.front();
+                target->values.push_back(parent->values[val_index]);
+                parent->values[val_index] = right_sibling->values.front();
                 right_sibling->values.erase(right_sibling->values.begin());
         
                 if (!right_sibling->children.empty()) {
@@ -212,7 +211,7 @@ class BTree{
                 return;
             }
             if(left_sibling){
-                left_sibling->values.push_back(parent->values[idx - 1]);
+                left_sibling->values.push_back(parent->values[val_index - 1]);
                 left_sibling->values.insert(left_sibling->values.end(), target->values.begin(), target->values.end());
                 left_sibling->children.insert(left_sibling->children.end(), target->children.begin(), target->children.end());
                 for(auto child : target->children){
@@ -220,21 +219,21 @@ class BTree{
                         child->parent = left_sibling;
                     }
                 }
-                parent->values.erase(parent->values.begin() + idx - 1);
-                parent->children.erase(parent->children.begin() + idx);
+                parent->values.erase(parent->values.begin() + val_index - 1);
+                parent->children.erase(parent->children.begin() + val_index);
                 delete target;
                 if (parent->values.size() < min_keys)
                     fix_underflow(parent);
             } 
             else if(right_sibling){
-                target->values.push_back(parent->values[idx]);
+                target->values.push_back(parent->values[val_index]);
                 target->values.insert(target->values.end(), right_sibling->values.begin(), right_sibling->values.end());
                 target->children.insert(target->children.end(), right_sibling->children.begin(), right_sibling->children.end());
                 for (auto child : right_sibling->children) {
                     if (child) child->parent = target;
                 }
-                parent->values.erase(parent->values.begin() + idx);
-                parent->children.erase(parent->children.begin() + idx + 1);
+                parent->values.erase(parent->values.begin() + val_index);
+                parent->children.erase(parent->children.begin() + val_index + 1);
                 delete right_sibling;
                 if (parent->values.size() < min_keys)
                     fix_underflow(parent);
@@ -343,22 +342,22 @@ class BTree{
                 }
                 return root;
             }
-            int idx = -1;
+            int val_index = -1;
             for (int i = 0; i < node_with_val->values.size(); i++) {
                 if (node_with_val->values[i] == val) {
-                    idx = i;
+                    val_index = i;
                     break;
                 }
             }
-            if (idx != -1) {
-                Node* pred = node_with_val->children[idx];
-                while (!pred->children.empty())
-                    pred = pred->children.back();
-                int pred_val = pred->values.back();
-                node_with_val->values[idx] = pred_val;
-                dumb_delete(pred, pred_val);
-                if (pred->values.size() < min_keys)
-                    fix_underflow(pred);
+            if (val_index != -1) {
+                Node* predecessor = node_with_val->children[val_index];
+                while(!predecessor->children.empty())
+                    predecessor = predecessor->children.back();
+                int pred_val = predecessor->values.back();
+                node_with_val->values[val_index] = pred_val;
+                dumb_delete(predecessor, pred_val);
+                if (predecessor->values.size() < min_keys)
+                    fix_underflow(predecessor);
             }
             return root;
         }
