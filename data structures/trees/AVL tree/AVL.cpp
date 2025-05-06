@@ -8,75 +8,117 @@ class AVL{
             Node* left = nullptr;
             Node* right = nullptr;
             Node* parent = nullptr;
+            int height = 1;
             int val;
         };
         Node* root = nullptr;
 
-        Node* leftTurn(Node* target){
-            if(target->left==nullptr){
-                return nullptr;
+        Node* rightTurn(Node* target){
+            if(target==nullptr || target->left==nullptr){
+                return target;
             }
             Node* x = target->left;
-            Node** parent_link = nullptr;
-            if(!target->parent){
-                x->parent = nullptr;
-                if(x->right==nullptr){
-                    x->right = target;
-                    target->left = nullptr;
+            target->left = x->right;
+            if(x->right){
+                x->right->parent = target;
+            }
+            x->right = target;
+            x->parent = target->parent;
+            target->parent = x;
+            if(x->parent){
+                if(x->parent->left==target){
+                    x->parent->left = x;
                 }
                 else{
-                    target->left = x->right;
-                    x->right = target;
+                    x->parent->right = x;
                 }
-                target->parent = x;
-                return x;
-            }
-            else if(target->parent->left && target->parent->left == target){
-                parent_link = &target->parent->left;
-            }
-            else if(target->parent->right && target->parent->right == target){
-                parent_link = &target->parent->right;
-            }
-            if(x->right==nullptr){
-                x->right = target;
-                target->left = nullptr;
-                *parent_link = x;
             }
             else{
-                target->left = x->right;
-                x->right->parent = target;
-                x->right = target;
-                *parent_link = x;
+                root = x;
             }
-            target->parent = x;
+            target->height = max(getHeight(target->left), getHeight(target->right)) + 1;
+            x->height = max(getHeight(x->left), getHeight(x->right)) + 1;
             return x;
         }
 
-        Node* rightTurn(Node* target) {
-            if (!target || !target->right)
-                return nullptr;
-            Node* x = target->right;
-            Node** parent_link = nullptr;
-            if (!target->parent){
-                x->parent = nullptr;
-            } 
-            else{
-                if(target->parent->left == target){
-                    parent_link = &target->parent->left;
-                }
-                else if(target->parent->right == target){
-                    parent_link = &target->parent->right;
-                }
-                *parent_link = x;
-                x->parent = target->parent;
+        Node* leftTurn(Node* target){
+            if(target==nullptr || target->right==nullptr){
+                return target;
             }
+            Node* x = target->right;
             target->right = x->left;
             if(x->left){
                 x->left->parent = target;
             }
             x->left = target;
+            x->parent = target->parent;
             target->parent = x;
+            if(x->parent){
+                if(x->parent->left==target){
+                    x->parent->left = x;
+                }
+                else{
+                    x->parent->right = x;
+                }
+            }
+            else{
+                root = x;
+            }
+            target->height = max(getHeight(target->left), getHeight(target->right)) + 1;
+            x->height = max(getHeight(x->left), getHeight(x->right)) + 1;
             return x;
+        }
+
+        int getHeight(Node* node) {
+            return node ? node->height : 0;
+        }
+
+        void updateHeight(Node* node){
+            if(node == nullptr){
+                return;
+            }
+            if(!node->left && !node->right){
+                node->height=1;
+                if(node->parent){
+                    updateHeight(node->parent);
+                }
+            }
+            node->height = max(getHeight(node->left), getHeight(node->right)) + 1;
+            Node* balanced = solveProblem(node);
+            if (balanced && balanced->parent == nullptr) {
+                root = balanced;
+            }
+            if(node->parent){
+                updateHeight(node->parent);
+            }
+        }
+
+        int getBalance(Node* node) {
+            return getHeight(node->left) - getHeight(node->right);
+        }
+
+
+        Node* solveProblem(Node* target){
+            int balance = getBalance(target);
+            if(balance >= 2){
+                if(getBalance(target->left) == 1){
+                    return rightTurn(target);
+                }
+                else if(getBalance(target->left) == -1){
+                    target->left = leftTurn(target->left);
+                    return rightTurn(target);
+                }
+            }
+            else if(balance <= -2){
+                if(getBalance(target->right) == -1){
+                    return leftTurn(target);
+                }
+                else if(getBalance(target->right) == 1){
+                    target->right = rightTurn(target->right);
+                    return leftTurn(target);
+                }
+            }
+            return target;
         }
 
 
@@ -197,6 +239,7 @@ class AVL{
                     if(current->right==nullptr){
                         current->right = new Node;
                         current->right->val = val;
+                        updateHeight(current->right);
                         current->right->parent = current;
                         cout <<" The node "<< val <<" has been inserted succesfully"<< endl;
                         return current->right;
@@ -206,6 +249,7 @@ class AVL{
                 else if(val < current->val){
                     if(current->left==nullptr){
                         current->left = new Node;
+                        updateHeight(current->left);
                         current->left->val = val;
                         current->left->parent = current;
                         cout <<" The node "<< val <<" has been inserted succesfully"<< endl;
@@ -222,6 +266,7 @@ class AVL{
             int buf;
             Node* target = find(val);
             Node* pointer;
+            Node* father = target->parent;
             if(root==nullptr || !target){
                 cout <<" The node can`t be removed "<< endl;
                 return -1;
@@ -242,6 +287,7 @@ class AVL{
                 }
                 buf = target->val;
                 delete target;
+                updateHeight(father);
                 cout <<" The node with val "<< buf <<" has been succesfully removed "<< endl;
                 return buf;
             }
@@ -251,6 +297,7 @@ class AVL{
                     target->left->parent = target->parent;
                     buf = target->val;
                     delete target;
+                    updateHeight(father);
                     cout <<" The node with val "<< buf <<" has been succesfully removed "<< endl;
                     return buf;
                 }
@@ -259,6 +306,7 @@ class AVL{
                     target->left->parent = target->parent;
                     buf = target->val;
                     delete target;
+                    updateHeight(father);
                     cout <<" The node with val "<< buf <<" has been succesfully removed "<< endl;
                     return buf;
                 }
@@ -269,6 +317,7 @@ class AVL{
                     target->right->parent = target->parent;
                     buf = target->val;
                     delete target;
+                    updateHeight(father);
                     cout <<" The node with val "<< buf <<" has been succesfully removed "<< endl;
                     return buf;
                 }
@@ -277,6 +326,7 @@ class AVL{
                     target->right->parent = target->parent;
                     buf = target->val;
                     delete target;
+                    updateHeight(father);
                     cout <<" The node with val "<< buf <<" has been succesfully removed "<< endl;
                     return buf;
                 }
@@ -287,22 +337,26 @@ class AVL{
                 while(pointer->right!=nullptr){
                     pointer = pointer->right;
                 }
+                father = pointer->parent;
                 if(pointer->left!=nullptr){
                     target->val = pointer->val;
                     if(pointer->parent->right!=nullptr && pointer->parent->right==pointer){
                         pointer->parent->right = pointer->left;
                         pointer->left->parent = pointer->parent->right;
                         delete pointer;
+                        updateHeight(father);
                     }
                     else if(pointer->parent->left!=nullptr && pointer->parent->left==pointer){
                         pointer->parent->left = pointer->left;
                         pointer->left->parent = pointer->parent->left;
                         delete pointer;
+                        updateHeight(father);
                     }
                 }
                 else{
                     target->val = pointer->val;
                     delete pointer;
+                    updateHeight(father);
                 }
                 cout <<" The node with val "<< buf <<" has been succesfully removed "<< endl;
                 return buf;
